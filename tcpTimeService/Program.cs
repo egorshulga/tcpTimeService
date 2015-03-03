@@ -29,6 +29,9 @@ namespace tcpTimeService
 		}
 
 
+
+
+
 		private static void ServerStart()
 		{
 			const int port = 1414;
@@ -41,7 +44,7 @@ namespace tcpTimeService
 				{
 					Console.WriteLine("Server: waiting for connections...");
 					TcpClient client = server.AcceptTcpClient();
-					Console.WriteLine("Server: ");
+					Console.WriteLine("Server: client");
 				}
 
 			}
