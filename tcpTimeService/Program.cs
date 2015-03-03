@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
+using System.Threading;
 
 namespace tcpTimeService
 {
@@ -17,10 +20,10 @@ namespace tcpTimeService
 			switch (args[1])
 			{
 				case "server":
-					ServerStart();
+					Server.StartListening();
 					break;
 				case "client":
-					ClientStart();
+
 					break;
 				default:
 					Console.WriteLine("Choose either server or client to start. Terminating");
@@ -28,41 +31,78 @@ namespace tcpTimeService
 			}
 		}
 
-
-
-
-
-		private static void ServerStart()
+		static class Server
 		{
-			const int port = 1414;
-			TcpListener server = new TcpListener(IPAddress.Any, port);
-			try
-			{
-				server.Start();
+			private static TcpListener server;
+			private const int port = 1414;
 
-				while (true)
+			public static void StartListening()
+			{
+				server = new TcpListener(IPAddress.Any, port);
+				try
 				{
-					Console.WriteLine("Server: waiting for connections...");
-					TcpClient client = server.AcceptTcpClient();
-					Console.WriteLine("Server: client");
+					server.Start();
+
+					while (true)
+					{
+						Console.WriteLine("Server: waiting for connections...");
+						TcpClient client = server.AcceptTcpClient();
+						Console.WriteLine("Server: client {0} connected just now", (IPEndPoint)client.Client.RemoteEndPoint);
+
+						Thread thread = new Thread(new ParameterizedThreadStart(ProcessClient));
+						thread.Start(client);
+
+						Thread.Sleep(1000);
+					}
+
 				}
+				catch (Exception e)
+				{
+					Console.WriteLine("Error {0}", e);
+				}
+				finally
+				{
+					server.Stop();
+				}
+			}
 
-			}
-			catch (Exception e)
+			private static void ProcessClient(object obj)
 			{
-				Console.WriteLine("Error {0}", e);
+				try
+				{
+					while (true)
+					{
+						TcpClient client = (TcpClient) obj;
+						string currentTime = DateTime.Now.ToString();
+						byte[] bufferedCurrentTime = Encoding.ASCII.GetBytes(currentTime);
+						client.GetStream().Write(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
+						Thread.Sleep(1000);
+					}
+				}
+				catch (Exception e)
+				{
+					Console.WriteLine("Error {0}", e);
+				}
 			}
-			finally
-			{
-				server.Stop();
-			}
+
 		}
 
 
-		private static void ClientStart()
+		static class Client
 		{
-			throw new NotImplementedException();
+
+			public static void Start()
+			{
+				
+			}
+
+
 		}
+
+
+
+
+
 
 
 	}
