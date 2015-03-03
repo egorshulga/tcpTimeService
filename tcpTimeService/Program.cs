@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Globalization;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -17,13 +17,13 @@ namespace tcpTimeService
 				Console.WriteLine("Choose either server or client to start. Terminating");
 				return;
 			}
-			switch (args[1])
+			switch (args[args.Count() - 1])
 			{
 				case "server":
 					Server.StartListening();
 					break;
 				case "client":
-
+					Client.Start();
 					break;
 				default:
 					Console.WriteLine("Choose either server or client to start. Terminating");
@@ -47,7 +47,7 @@ namespace tcpTimeService
 					{
 						Console.WriteLine("Server: waiting for connections...");
 						TcpClient client = server.AcceptTcpClient();
-						Console.WriteLine("Server: client {0} connected just now", (IPEndPoint)client.Client.RemoteEndPoint);
+						Console.WriteLine("Server: client {0} has connected just now", (IPEndPoint)client.Client.RemoteEndPoint);
 
 						Thread thread = new Thread(new ParameterizedThreadStart(ProcessClient));
 						thread.Start(client);
@@ -68,20 +68,23 @@ namespace tcpTimeService
 
 			private static void ProcessClient(object obj)
 			{
-				try
+				TcpClient client = (TcpClient)obj;
+				EndPoint clientInfo = client.Client.RemoteEndPoint;
+				while (true)
 				{
-					while (true)
+					string currentTime = DateTime.Now.ToString(CultureInfo.CurrentCulture);
+					byte[] bufferedCurrentTime = Encoding.ASCII.GetBytes(currentTime);
+					try
 					{
-						TcpClient client = (TcpClient) obj;
-						string currentTime = DateTime.Now.ToString();
-						byte[] bufferedCurrentTime = Encoding.ASCII.GetBytes(currentTime);
 						client.GetStream().Write(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
-						Thread.Sleep(1000);
 					}
-				}
-				catch (Exception e)
-				{
-					Console.WriteLine("Error {0}", e);
+					catch (Exception e)
+					{
+						Console.WriteLine("Server: client {0} has just disconnected.", clientInfo);
+						Console.WriteLine("Server: waiting for connections...");
+						return;
+					}
+					Thread.Sleep(1000);
 				}
 			}
 
@@ -90,20 +93,27 @@ namespace tcpTimeService
 
 		static class Client
 		{
+			private static TcpClient client = new TcpClient();
+			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {127,0,0,1}), 1414);
 
 			public static void Start()
 			{
-				
+				client.Connect(remoteServer);
+				string currentTime = DateTime.Now.ToString(CultureInfo.CurrentCulture);
+				byte[] bufferedCurrentTime = Encoding.ASCII.GetBytes(currentTime);
+				while (true)
+				{
+					client.GetStream().Read(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
+					currentTime = Encoding.ASCII.GetString(bufferedCurrentTime);
+					Console.WriteLine(currentTime);
+				}
+
 			}
 
 
 		}
 
-
-
-
-
-
+		
 
 	}
 }
