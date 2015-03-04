@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Globalization;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
@@ -14,7 +15,7 @@ namespace tcpTimeService
 		{
 			if (!args.Any())
 			{
-				Console.WriteLine("Choose either server or client to start. Terminating");
+				Console.WriteLine("Choose either server or client to start. Terminating...");
 				return;
 			}
 			switch (args[args.Count() - 1])
@@ -26,7 +27,7 @@ namespace tcpTimeService
 					Client.Start();
 					break;
 				default:
-					Console.WriteLine("Choose either server or client to start. Terminating");
+					Console.WriteLine("Choose either server or client to start. Terminating...");
 					break;
 			}
 		}
@@ -47,7 +48,7 @@ namespace tcpTimeService
 					{
 						Console.WriteLine("Server: waiting for connections...");
 						TcpClient client = server.AcceptTcpClient();
-						Console.WriteLine("Server: client {0} has connected just now", (IPEndPoint)client.Client.RemoteEndPoint);
+						Console.WriteLine("Server: client {0} has connected just now.", (IPEndPoint)client.Client.RemoteEndPoint);
 
 						Thread thread = new Thread(new ParameterizedThreadStart(ProcessClient));
 						thread.Start(client);
@@ -78,7 +79,7 @@ namespace tcpTimeService
 					{
 						client.GetStream().Write(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
 					}
-					catch (SocketException e)
+					catch (IOException e)
 					{
 						Console.WriteLine("Server: client {0} has just disconnected.", clientInfo);
 						Console.WriteLine("Server: waiting for connections...");
@@ -94,7 +95,7 @@ namespace tcpTimeService
 		static class Client
 		{
 			private static TcpClient client = new TcpClient();
-			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {172,19,12,228}), 1414);
+			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {192,168,52,145}), 1414);
 
 			public static void Start()
 			{
@@ -110,9 +111,14 @@ namespace tcpTimeService
 						Console.WriteLine(currentTime);
 					}
 				}
+				catch (IOException e)
+				{
+					Console.WriteLine("Client: server unexpectedly disconnected. Terminating...");
+					return;
+				}
 				catch (SocketException e)
 				{
-					Console.WriteLine("CLient: server unexpectdely disconnected. Terminating...");
+					Console.WriteLine("Client: server not found. Terminating...");
 					return;
 				}
 			}
