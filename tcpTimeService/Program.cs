@@ -78,7 +78,7 @@ namespace tcpTimeService
 					{
 						client.GetStream().Write(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
 					}
-					catch (Exception e)
+					catch (SocketException e)
 					{
 						Console.WriteLine("Server: client {0} has just disconnected.", clientInfo);
 						Console.WriteLine("Server: waiting for connections...");
@@ -94,20 +94,27 @@ namespace tcpTimeService
 		static class Client
 		{
 			private static TcpClient client = new TcpClient();
-			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {127,0,0,1}), 1414);
+			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {172,19,12,228}), 1414);
 
 			public static void Start()
 			{
-				client.Connect(remoteServer);
-				string currentTime = DateTime.Now.ToString(CultureInfo.CurrentCulture);
-				byte[] bufferedCurrentTime = Encoding.ASCII.GetBytes(currentTime);
-				while (true)
+				try
 				{
-					client.GetStream().Read(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
-					currentTime = Encoding.ASCII.GetString(bufferedCurrentTime);
-					Console.WriteLine(currentTime);
+					client.Connect(remoteServer);
+					string currentTime = DateTime.Now.ToString(CultureInfo.CurrentCulture);
+					byte[] bufferedCurrentTime = Encoding.ASCII.GetBytes(currentTime);
+					while (true)
+					{
+						client.GetStream().Read(bufferedCurrentTime, 0, bufferedCurrentTime.Length);
+						currentTime = Encoding.ASCII.GetString(bufferedCurrentTime);
+						Console.WriteLine(currentTime);
+					}
 				}
-
+				catch (SocketException e)
+				{
+					Console.WriteLine("CLient: server unexpectdely disconnected. Terminating...");
+					return;
+				}
 			}
 
 
