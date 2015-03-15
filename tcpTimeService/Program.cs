@@ -95,7 +95,7 @@ namespace tcpTimeService
 		static class Client
 		{
 			private static TcpClient client = new TcpClient();
-			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {192,168,52,145}), 1414);
+			private static readonly IPEndPoint remoteServer = new IPEndPoint(new IPAddress(new byte[] {192,168,33,109}), 1414);
 
 			public static void Start()
 			{
